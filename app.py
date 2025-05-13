@@ -30,20 +30,20 @@ if uploaded_file:
     plt.ylabel("Frecuencia")
     st.pyplot()
 
-    # 2. Gráfico de distribución del nivel de bioturbación
-    st.write("Distribución del nivel de bioturbación")
+    # 2. Gráfico de distribución de la porosidad
+    st.write("Distribución de la porosidad de las muestras")
     plt.figure(figsize=(8, 6))
-    sns.countplot(x='Nivel de bioturbación (0–3)', data=df, palette='Set2')
-    plt.title("Distribución del nivel de bioturbación")
-    plt.xlabel("Nivel de bioturbación (0–3)")
+    sns.histplot(df['Porosidad (%)'], kde=True, bins=10, color='lightgreen')
+    plt.title("Distribución de la Porosidad")
+    plt.xlabel("Porosidad (%)")
     plt.ylabel("Frecuencia")
     st.pyplot()
 
-    # 3. Gráfico de dispersión (espesor vs bioturbación) con regresión lineal
-    st.write("Relación entre espesor y bioturbación")
+    # 3. Gráfico de dispersión (espesor vs porosidad) con regresión lineal
+    st.write("Relación entre espesor y porosidad")
     plt.figure(figsize=(8, 6))
     X = df[['Espesor (cm)']].values
-    y = df['Nivel de bioturbación (0–3)'].values
+    y = df['Porosidad (%)'].values
 
     # Crear el modelo de regresión lineal
     model = LinearRegression()
@@ -53,23 +53,21 @@ if uploaded_file:
     # Gráfico de dispersión con línea de regresión
     plt.scatter(X, y, color='blue')
     plt.plot(X, y_pred, color='red', linewidth=2)
-    plt.title("Relación entre Espesor y Bioturbación")
+    plt.title("Relación entre Espesor y Porosidad")
     plt.xlabel("Espesor (cm)")
-    plt.ylabel("Nivel de bioturbación (0-3)")
+    plt.ylabel("Porosidad (%)")
     st.pyplot()
 
-    # 4. Boxplot para espesor y bioturbación
-    st.write("Boxplot de espesor y bioturbación")
+    # 4. Boxplot para espesor y porosidad
+    st.write("Boxplot de espesor y porosidad")
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
 
     # Boxplot de espesor
     sns.boxplot(x=df['Espesor (cm)'], ax=axes[0], color='lightgreen')
     axes[0].set_title("Boxplot de Espesor (cm)")
 
-    # Boxplot de bioturbación
-    sns.boxplot(x=df['Nivel de bioturbación (0–3)'], ax=axes[1], color='lightcoral')
-    axes[1].set_title("Boxplot de Nivel de Bioturbación")
+    # Boxplot de porosidad
+    sns.boxplot(x=df['Porosidad (%)'], ax=axes[1], color='lightcoral')
+    axes[1].set_title("Boxplot de Porosidad")
 
     st.pyplot(fig)
-
-

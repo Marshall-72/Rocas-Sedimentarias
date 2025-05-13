@@ -34,21 +34,21 @@ if uploaded_file:
 
         # 2. Gráfico de barras para comparar el tamaño del grano de las muestras seleccionadas
         st.write("Comparación del Tamaño del Grano de las Muestras Seleccionadas")
-        plt.figure(figsize=(8, 6))
-        sns.barplot(x='Nombre Muestra', y='Tamaño del grano', data=df_seleccionado, palette='Set2')
-        plt.title("Tamaño del Grano por Muestra")
-        plt.xlabel("Muestra")
-        plt.ylabel("Tamaño del Grano")
-        st.pyplot()
+        fig, ax = plt.subplots(figsize=(8, 6))  # Crear figura y ejes
+        sns.barplot(x='Nombre Muestra', y='Tamaño del grano', data=df_seleccionado, palette='Set2', ax=ax)
+        ax.set_title("Tamaño del Grano por Muestra")
+        ax.set_xlabel("Muestra")
+        ax.set_ylabel("Tamaño del Grano")
+        st.pyplot(fig)  # Pasar el objeto fig aquí
 
         # 3. Gráfico de dispersión interactivo: Comparar Porosidad vs. Tamaño del grano
         st.write("Comparación entre Porosidad y Tamaño del Grano")
-        plt.figure(figsize=(8, 6))
-        sns.scatterplot(x='Porosidad (%)', y='Tamaño del grano', data=df_seleccionado, hue='Nombre Muestra', palette='Set2')
-        plt.title("Porosidad vs Tamaño del Grano")
-        plt.xlabel("Porosidad (%)")
-        plt.ylabel("Tamaño del Grano")
-        st.pyplot()
+        fig, ax = plt.subplots(figsize=(8, 6))  # Crear figura y ejes
+        sns.scatterplot(x='Porosidad (%)', y='Tamaño del grano', data=df_seleccionado, hue='Nombre Muestra', palette='Set2', ax=ax)
+        ax.set_title("Porosidad vs Tamaño del Grano")
+        ax.set_xlabel("Porosidad (%)")
+        ax.set_ylabel("Tamaño del Grano")
+        st.pyplot(fig)  # Pasar el objeto fig aquí
 
         # 4. Regresión lineal entre Porosidad y Grado de Cementación
         st.write("Relación entre Porosidad y Grado de Cementación")
@@ -61,19 +61,19 @@ if uploaded_file:
         y_pred = model.predict(X)
 
         # Gráfico de dispersión con línea de regresión
-        plt.figure(figsize=(8, 6))
-        plt.scatter(X, y, color='blue')
-        plt.plot(X, y_pred, color='red', linewidth=2)
-        plt.title("Relación entre Porosidad y Grado de Cementación")
-        plt.xlabel("Porosidad (%)")
-        plt.ylabel("Grado de Cementación")
-        st.pyplot()
+        fig, ax = plt.subplots(figsize=(8, 6))  # Crear figura y ejes
+        ax.scatter(X, y, color='blue')
+        ax.plot(X, y_pred, color='red', linewidth=2)
+        ax.set_title("Relación entre Porosidad y Grado de Cementación")
+        ax.set_xlabel("Porosidad (%)")
+        ax.set_ylabel("Grado de Cementación")
+        st.pyplot(fig)  # Pasar el objeto fig aquí
 
         # 5. Gráfico Radar para comparar múltiples parámetros entre las muestras seleccionadas
         st.write("Comparación de múltiples parámetros entre las muestras seleccionadas")
 
-        # Prepara los datos para el gráfico radar (porosidad, tamaño del grano, densidad, etc.)
-        df_radar = df_seleccionado[['Nombre Muestra', 'Porosidad (%)', 'Tamaño del grano', 'Densidad aparente (g/cm³)', 'Edad geológica (Ma)']]
+        # Prepara los datos para el gráfico radar (porosidad, tamaño del grano, etc.)
+        df_radar = df_seleccionado[['Nombre Muestra', 'Porosidad (%)', 'Tamaño del grano', 'Edad geológica (Ma)', 'Grado de cementación']]
         df_radar = df_radar.set_index('Nombre Muestra')
 
         # Normalizamos los datos para el gráfico radar
@@ -85,7 +85,7 @@ if uploaded_file:
         angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
         angles += angles[:1]
 
-        fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+        fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))  # Crear figura y ejes para el radar
 
         for index, row in df_radar_normalized.iterrows():
             values = row.tolist()
@@ -98,8 +98,6 @@ if uploaded_file:
         ax.set_xticklabels(categories)
         ax.legend(loc='upper right', bbox_to_anchor=(1.1, 1.1))
 
-        plt.title('Comparación de Parámetros entre Muestras')
-        st.pyplot(fig)
-
-
+        ax.set_title('Comparación de Parámetros entre Muestras')
+        st.pyplot(fig)  # Pasar el objeto fig aquí
 

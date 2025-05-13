@@ -21,16 +21,7 @@ if uploaded_file:
     # Estadísticas descriptivas
     st.write("Estadísticas descriptivas:", df.describe())
 
-    # 1. Gráfico de distribución del espesor
-    st.write("Distribución del espesor de las muestras")
-    plt.figure(figsize=(8, 6))
-    sns.histplot(df['Espesor (cm)'], kde=True, bins=10, color='skyblue')
-    plt.title("Distribución del espesor")
-    plt.xlabel("Espesor (cm)")
-    plt.ylabel("Frecuencia")
-    st.pyplot()
-
-    # 2. Gráfico de distribución de la porosidad
+    # 1. Gráfico de distribución de la porosidad
     st.write("Distribución de la porosidad de las muestras")
     plt.figure(figsize=(8, 6))
     sns.histplot(df['Porosidad (%)'], kde=True, bins=10, color='lightgreen')
@@ -39,11 +30,20 @@ if uploaded_file:
     plt.ylabel("Frecuencia")
     st.pyplot()
 
-    # 3. Gráfico de dispersión (espesor vs porosidad) con regresión lineal
-    st.write("Relación entre espesor y porosidad")
+    # 2. Gráfico de distribución del tamaño del grano
+    st.write("Distribución del tamaño del grano")
     plt.figure(figsize=(8, 6))
-    X = df[['Espesor (cm)']].values
-    y = df['Porosidad (%)'].values
+    sns.countplot(x='Tamaño del grano', data=df, palette='Set2')
+    plt.title("Distribución del Tamaño del Grano")
+    plt.xlabel("Tamaño del Grano")
+    plt.ylabel("Frecuencia")
+    st.pyplot()
+
+    # 3. Gráfico de dispersión (Porosidad vs Cementación) con regresión lineal
+    st.write("Relación entre porosidad y grado de cementación")
+    plt.figure(figsize=(8, 6))
+    X = df[['Porosidad (%)']].values
+    y = df['Grado de cementación'].astype('category').cat.codes.values  # Convertir la categoría de cementación a numérica
 
     # Crear el modelo de regresión lineal
     model = LinearRegression()
@@ -53,21 +53,22 @@ if uploaded_file:
     # Gráfico de dispersión con línea de regresión
     plt.scatter(X, y, color='blue')
     plt.plot(X, y_pred, color='red', linewidth=2)
-    plt.title("Relación entre Espesor y Porosidad")
-    plt.xlabel("Espesor (cm)")
-    plt.ylabel("Porosidad (%)")
+    plt.title("Relación entre Porosidad y Grado de Cementación")
+    plt.xlabel("Porosidad (%)")
+    plt.ylabel("Grado de Cementación")
     st.pyplot()
 
-    # 4. Boxplot para espesor y porosidad
-    st.write("Boxplot de espesor y porosidad")
+    # 4. Boxplot para porosidad y tamaño del grano
+    st.write("Boxplot de porosidad y tamaño del grano")
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
 
-    # Boxplot de espesor
-    sns.boxplot(x=df['Espesor (cm)'], ax=axes[0], color='lightgreen')
-    axes[0].set_title("Boxplot de Espesor (cm)")
-
     # Boxplot de porosidad
-    sns.boxplot(x=df['Porosidad (%)'], ax=axes[1], color='lightcoral')
-    axes[1].set_title("Boxplot de Porosidad")
+    sns.boxplot(x=df['Porosidad (%)'], ax=axes[0], color='lightgreen')
+    axes[0].set_title("Boxplot de Porosidad (%)")
+
+    # Boxplot de tamaño del grano
+    sns.boxplot(x=df['Tamaño del grano'], ax=axes[1], color='lightcoral')
+    axes[1].set_title("Boxplot de Tamaño del Grano")
 
     st.pyplot(fig)
+

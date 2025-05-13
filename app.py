@@ -72,8 +72,11 @@ if uploaded_file:
         # 5. Gráfico Radar para comparar múltiples parámetros entre las muestras seleccionadas
         st.write("Comparación de múltiples parámetros entre las muestras seleccionadas")
 
-        # Prepara los datos para el gráfico radar (solo columnas numéricas)
+        # Filtrar solo las columnas numéricas
         df_radar = df_seleccionado[['Porosidad (%)', 'Tamaño del grano', 'Edad geológica (Ma)', 'Grado de cementación']]
+
+        # Eliminar filas con valores nulos (si hay)
+        df_radar = df_radar.dropna()
 
         # Asegurarse de que solo se normalicen las columnas numéricas
         df_radar_normalized = df_radar.apply(lambda x: (x - x.min()) / (x.max() - x.min()))

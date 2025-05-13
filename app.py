@@ -21,6 +21,15 @@ if uploaded_file:
     # Mostrar los nombres de las columnas
     st.write("Columnas en el archivo:", df.columns)
 
+    # Codificación de categorías a números
+    # Mapeo para 'Grado de cementación' (por ejemplo, "Mal"=1, "Regular"=2, "Bien"=3)
+    cementacion_mapping = {"Mal": 1, "Regular": 2, "Bien": 3}
+    df['Grado de cementación'] = df['Grado de cementación'].map(cementacion_mapping)
+
+    # Mapeo para 'Tamaño del grano' (por ejemplo, "Arena"=1, "Grava"=2, "Limo"=3)
+    grano_mapping = {"Arena": 1, "Grava": 2, "Limo": 3}
+    df['Tamaño del grano'] = df['Tamaño del grano'].map(grano_mapping)
+
     # Estadísticas descriptivas
     st.write("Estadísticas descriptivas:", df.describe())
 
@@ -53,7 +62,7 @@ if uploaded_file:
         # 4. Regresión lineal entre Porosidad y Grado de Cementación
         st.write("Relación entre Porosidad y Grado de Cementación")
         X = df_seleccionado[['Porosidad (%)']].values
-        y = df_seleccionado['Grado de cementación'].astype('category').cat.codes.values  # Convertir a valores numéricos
+        y = df_seleccionado['Grado de cementación'].values  # Ahora es numérico
 
         # Crear el modelo de regresión lineal
         model = LinearRegression()
@@ -77,6 +86,9 @@ if uploaded_file:
 
         # Eliminar filas con valores nulos (si hay)
         df_radar = df_radar.dropna()
+
+        # Verificar que las columnas son numéricas
+        df_radar = df_radar.apply(pd.to_numeric, errors='coerce')
 
         # Asegurarse de que solo se normalicen las columnas numéricas
         df_radar_normalized = df_radar.apply(lambda x: (x - x.min()) / (x.max() - x.min()))

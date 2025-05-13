@@ -7,7 +7,8 @@ import numpy as np
 
 # Cargar el archivo Excel
 st.title("Análisis Interactivo de Estructuras Sedimentarias")
-
+# Mostrar los nombres de las columnas
+st.write("Columnas en el archivo:", df.columns)
 # Subir archivo Excel
 uploaded_file = st.file_uploader("Cargar archivo Excel", type=["xlsx"])
 

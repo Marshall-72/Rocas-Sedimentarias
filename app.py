@@ -6,7 +6,7 @@ from sklearn.linear_model import LinearRegression
 import numpy as np
 
 # Cargar el archivo Excel
-st.title("Análisis de Estructuras Sedimentarias")
+st.title("Análisis Interactivo de Estructuras Sedimentarias")
 
 # Subir archivo Excel
 uploaded_file = st.file_uploader("Cargar archivo Excel", type=["xlsx"])
@@ -21,54 +21,81 @@ if uploaded_file:
     # Estadísticas descriptivas
     st.write("Estadísticas descriptivas:", df.describe())
 
-    # 1. Gráfico de distribución de la porosidad
-    st.write("Distribución de la porosidad de las muestras")
-    plt.figure(figsize=(8, 6))
-    sns.histplot(df['Porosidad (%)'], kde=True, bins=10, color='lightgreen')
-    plt.title("Distribución de la Porosidad")
-    plt.xlabel("Porosidad (%)")
-    plt.ylabel("Frecuencia")
-    st.pyplot()
+    # 1. Selección de muestras para comparación
+    st.write("Selecciona las muestras que deseas comparar:")
+    muestras_seleccionadas = st.multiselect('Muestras', df['Nombre Muestra'].unique())
 
-    # 2. Gráfico de distribución del tamaño del grano
-    st.write("Distribución del tamaño del grano")
-    plt.figure(figsize=(8, 6))
-    sns.countplot(x='Tamaño del grano', data=df, palette='Set2')
-    plt.title("Distribución del Tamaño del Grano")
-    plt.xlabel("Tamaño del Grano")
-    plt.ylabel("Frecuencia")
-    st.pyplot()
+    if muestras_seleccionadas:
+        # Filtrar las muestras seleccionadas
+        df_seleccionado = df[df['Nombre Muestra'].isin(muestras_seleccionadas)]
 
-    # 3. Gráfico de dispersión (Porosidad vs Cementación) con regresión lineal
-    st.write("Relación entre porosidad y grado de cementación")
-    plt.figure(figsize=(8, 6))
-    X = df[['Porosidad (%)']].values
-    y = df['Grado de cementación'].astype('category').cat.codes.values  # Convertir la categoría de cementación a numérica
+        # 2. Gráfico de barras para comparar el tamaño del grano de las muestras seleccionadas
+        st.write("Comparación del Tamaño del Grano de las Muestras Seleccionadas")
+        plt.figure(figsize=(8, 6))
+        sns.barplot(x='Nombre Muestra', y='Tamaño del grano', data=df_seleccionado, palette='Set2')
+        plt.title("Tamaño del Grano por Muestra")
+        plt.xlabel("Muestra")
+        plt.ylabel("Tamaño del Grano")
+        st.pyplot()
 
-    # Crear el modelo de regresión lineal
-    model = LinearRegression()
-    model.fit(X, y)
-    y_pred = model.predict(X)
+        # 3. Gráfico de dispersión interactivo: Comparar Porosidad vs. Tamaño del grano
+        st.write("Comparación entre Porosidad y Tamaño del Grano")
+        plt.figure(figsize=(8, 6))
+        sns.scatterplot(x='Porosidad (%)', y='Tamaño del grano', data=df_seleccionado, hue='Nombre Muestra', palette='Set2')
+        plt.title("Porosidad vs Tamaño del Grano")
+        plt.xlabel("Porosidad (%)")
+        plt.ylabel("Tamaño del Grano")
+        st.pyplot()
 
-    # Gráfico de dispersión con línea de regresión
-    plt.scatter(X, y, color='blue')
-    plt.plot(X, y_pred, color='red', linewidth=2)
-    plt.title("Relación entre Porosidad y Grado de Cementación")
-    plt.xlabel("Porosidad (%)")
-    plt.ylabel("Grado de Cementación")
-    st.pyplot()
+        # 4. Regresión lineal entre Porosidad y Grado de Cementación
+        st.write("Relación entre Porosidad y Grado de Cementación")
+        X = df_seleccionado[['Porosidad (%)']].values
+        y = df_seleccionado['Grado de cementación'].astype('category').cat.codes.values  # Convertir a valores numéricos
 
-    # 4. Boxplot para porosidad y tamaño del grano
-    st.write("Boxplot de porosidad y tamaño del grano")
-    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+        # Crear el modelo de regresión lineal
+        model = LinearRegression()
+        model.fit(X, y)
+        y_pred = model.predict(X)
 
-    # Boxplot de porosidad
-    sns.boxplot(x=df['Porosidad (%)'], ax=axes[0], color='lightgreen')
-    axes[0].set_title("Boxplot de Porosidad (%)")
+        # Gráfico de dispersión con línea de regresión
+        plt.figure(figsize=(8, 6))
+        plt.scatter(X, y, color='blue')
+        plt.plot(X, y_pred, color='red', linewidth=2)
+        plt.title("Relación entre Porosidad y Grado de Cementación")
+        plt.xlabel("Porosidad (%)")
+        plt.ylabel("Grado de Cementación")
+        st.pyplot()
 
-    # Boxplot de tamaño del grano
-    sns.boxplot(x=df['Tamaño del grano'], ax=axes[1], color='lightcoral')
-    axes[1].set_title("Boxplot de Tamaño del Grano")
+        # 5. Gráfico Radar para comparar múltiples parámetros entre las muestras seleccionadas
+        st.write("Comparación de múltiples parámetros entre las muestras seleccionadas")
 
-    st.pyplot(fig)
+        # Prepara los datos para el gráfico radar (porosidad, tamaño del grano, densidad, etc.)
+        df_radar = df_seleccionado[['Nombre Muestra', 'Porosidad (%)', 'Tamaño del grano', 'Densidad aparente (g/cm³)', 'Edad geológica (Ma)']]
+        df_radar = df_radar.set_index('Nombre Muestra')
+
+        # Normalizamos los datos para el gráfico radar
+        df_radar_normalized = df_radar.apply(lambda x: (x - x.min()) / (x.max() - x.min()))
+
+        # Crear el gráfico Radar
+        categories = df_radar_normalized.columns
+        N = len(categories)
+        angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
+        angles += angles[:1]
+
+        fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+
+        for index, row in df_radar_normalized.iterrows():
+            values = row.tolist()
+            values += values[:1]
+            ax.plot(angles, values, label=index)
+            ax.fill(angles, values, alpha=0.25)
+
+        ax.set_yticklabels([])
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(categories)
+        ax.legend(loc='upper right', bbox_to_anchor=(1.1, 1.1))
+
+        plt.title('Comparación de Parámetros entre Muestras')
+        st.pyplot(fig)
+
 

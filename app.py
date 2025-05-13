@@ -47,42 +47,96 @@ if uploaded_file:
     ax.set_ylabel("Frecuencia")
     st.pyplot(fig)  # Pasar el objeto fig aquí
 
-    # 3. Codificación para regresión
-    # Codificar "Grado de cementación" y "Tamaño del grano"
+    # Codificación de categorías a números
+    # Mapeo para 'Grado de cementación' (por ejemplo, "Mal"=1, "Regular"=2, "Bien"=3)
     cementacion_mapping = {"Mal": 1, "Regular": 2, "Bien": 3}
     df['Grado de cementación'] = df['Grado de cementación'].map(cementacion_mapping)
 
+    # Mapeo para 'Tamaño del grano' (por ejemplo, "Arena"=1, "Grava"=2, "Limo"=3)
     grano_mapping = {"Arena": 1, "Grava": 2, "Limo": 3}
     df['Tamaño del grano'] = df['Tamaño del grano'].map(grano_mapping)
 
-    # 4. Gráfico radar para comparar los parámetros seleccionados
-    st.write("Comparación de múltiples parámetros entre las muestras seleccionadas")
-    df_radar = df[['Porosidad (%)', 'Tamaño del grano', 'Edad geológica (Ma)', 'Grado de cementación']]
+    # Estadísticas descriptivas
+    st.write("Estadísticas descriptivas:", df.describe())
 
-    # Eliminar filas con valores nulos (si hay)
-    df_radar = df_radar.dropna()
+    # 3. Selección de muestras para comparación
+    st.write("Selecciona las muestras que deseas comparar:")
+    muestras_seleccionadas = st.multiselect('Muestras', df['Nombre Muestra'].unique())
 
-    # Normalización
-    df_radar_normalized = df_radar.apply(lambda x: (x - x.min()) / (x.max() - x.min()))
+    if muestras_seleccionadas:
+        # Filtrar las muestras seleccionadas
+        df_seleccionado = df[df['Nombre Muestra'].isin(muestras_seleccionadas)]
 
-    # Crear el gráfico Radar
-    categories = df_radar_normalized.columns
-    N = len(categories)
-    angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
-    angles += angles[:1]
+        # 4. Gráfico de barras para comparar el tamaño del grano de las muestras seleccionadas
+        st.write("Comparación del Tamaño del Grano de las Muestras Seleccionadas")
+        fig, ax = plt.subplots(figsize=(8, 6))  # Crear figura y ejes
+        sns.barplot(x='Nombre Muestra', y='Tamaño del grano', data=df_seleccionado, palette='Set2', ax=ax)
+        ax.set_title("Tamaño del Grano por Muestra")
+        ax.set_xlabel("Muestra")
+        ax.set_ylabel("Tamaño del Grano")
+        st.pyplot(fig)  # Pasar el objeto fig aquí
 
-    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))  # Crear figura y ejes para el radar
+        # 5. Gráfico de dispersión interactivo: Comparar Porosidad vs. Tamaño del grano
+        st.write("Comparación entre Porosidad y Tamaño del Grano")
+        fig, ax = plt.subplots(figsize=(8, 6))  # Crear figura y ejes
+        sns.scatterplot(x='Porosidad (%)', y='Tamaño del grano', data=df_seleccionado, hue='Nombre Muestra', palette='Set2', ax=ax)
+        ax.set_title("Porosidad vs Tamaño del Grano")
+        ax.set_xlabel("Porosidad (%)")
+        ax.set_ylabel("Tamaño del Grano")
+        st.pyplot(fig)  # Pasar el objeto fig aquí
 
-    for index, row in df_radar_normalized.iterrows():
-        values = row.tolist()
-        values += values[:1]
-        ax.plot(angles, values, label=index)
-        ax.fill(angles, values, alpha=0.25)
+        # 6. Regresión lineal entre Porosidad y Grado de Cementación
+        st.write("Relación entre Porosidad y Grado de Cementación")
+        X = df_seleccionado[['Porosidad (%)']].values
+        y = df_seleccionado['Grado de cementación'].values  # Ahora es numérico
 
-    ax.set_yticklabels([])
-    ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(categories)
-    ax.legend(loc='upper right', bbox_to_anchor=(1.1, 1.1))
+        # Crear el modelo de regresión lineal
+        model = LinearRegression()
+        model.fit(X, y)
+        y_pred = model.predict(X)
 
-    ax.set_title('Comparación de Parámetros entre Muestras')
-    st.pyplot(fig)  # Pasar el objeto fig aquí
+        # Gráfico de dispersión con línea de regresión
+        fig, ax = plt.subplots(figsize=(8, 6))  # Crear figura y ejes
+        ax.scatter(X, y, color='blue')
+        ax.plot(X, y_pred, color='red', linewidth=2)
+        ax.set_title("Relación entre Porosidad y Grado de Cementación")
+        ax.set_xlabel("Porosidad (%)")
+        ax.set_ylabel("Grado de Cementación")
+        st.pyplot(fig)  # Pasar el objeto fig aquí
+
+        # 7. Gráfico Radar para comparar múltiples parámetros entre las muestras seleccionadas
+        st.write("Comparación de múltiples parámetros entre las muestras seleccionadas")
+
+        # Filtrar solo las columnas numéricas
+        df_radar = df_seleccionado[['Porosidad (%)', 'Tamaño del grano', 'Edad geológica (Ma)', 'Grado de cementación']]
+
+        # Eliminar filas con valores nulos (si hay)
+        df_radar = df_radar.dropna()
+
+        # Verificar que las columnas son numéricas
+        df_radar = df_radar.apply(pd.to_numeric, errors='coerce')
+
+        # Asegurarse de que solo se normalicen las columnas numéricas
+        df_radar_normalized = df_radar.apply(lambda x: (x - x.min()) / (x.max() - x.min()))
+
+        # Crear el gráfico Radar
+        categories = df_radar_normalized.columns
+        N = len(categories)
+        angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
+        angles += angles[:1]
+
+        fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))  # Crear figura y ejes para el radar
+
+        for index, row in df_radar_normalized.iterrows():
+            values = row.tolist()
+            values += values[:1]
+            ax.plot(angles, values, label=index)
+            ax.fill(angles, values, alpha=0.25)
+
+        ax.set_yticklabels([])
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(categories)
+        ax.legend(loc='upper right', bbox_to_anchor=(1.1, 1.1))
+
+        ax.set_title('Comparación de Parámetros entre Muestras')
+        st.pyplot(fig)  # Pasar el objeto fig aquí

@@ -3,14 +3,40 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.graph_objects as go
+import scipy.stats as stats
 
 st.title("Dashboard completo: Análisis y visualización de estructuras sedimentarias")
+
+def agregar_columnas_numericas(df):
+    # Mapeo granulometría
+    mapa_tamano = {
+        "muy fino": 10,
+        "fino": 50,
+        "medio": 200,
+        "grueso": 600,
+        "muy grueso": 1000
+    }
+    df['granulometria_um'] = df['tamaño_de_grano'].map(mapa_tamano).fillna(0)
+
+    # Mapeo complejidad estratificación (ejemplo simple)
+    mapa_estrat = {
+        "Estratificación plana": 1,
+        "Estratificación cruzada": 2,
+        "Estratificación interna": 3
+    }
+    df['complejidad_estratificacion'] = df['tipo_de_estratificacion'].map(mapa_estrat).fillna(0)
+
+    return df
 
 # --- Carga de archivo ---
 uploaded_file = st.file_uploader("Sube tu archivo Excel corregido", type=["xlsx"])
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
-    st.write("Datos cargados:")
+
+    # Agregar columnas numéricas simuladas
+    df = agregar_columnas_numericas(df)
+
+    st.write("Datos cargados (con columnas numéricas añadidas):")
     st.dataframe(df)
 
     # --- Filtros ---
@@ -119,6 +145,29 @@ if uploaded_file:
     else:
         st.warning("Selecciona al menos dos columnas categóricas para generar el Sankey.")
 
+    # --- Sección análisis de correlación ---
+    st.header("Análisis de correlación")
+
+    columnas_numericas = df_filtrado.select_dtypes(include=['number']).columns.tolist()
+
+    if len(columnas_numericas) < 2:
+        st.info("No hay suficientes columnas numéricas para analizar correlación.")
+    else:
+        col_x = st.selectbox("Variable X (numérica)", columnas_numericas, key="corr_x")
+        col_y = st.selectbox("Variable Y (numérica)", columnas_numericas, index=1 if len(columnas_numericas) > 1 else 0, key="corr_y")
+
+        fig, ax = plt.subplots()
+        ax.scatter(df_filtrado[col_x], df_filtrado[col_y], alpha=0.7)
+        ax.set_xlabel(col_x)
+        ax.set_ylabel(col_y)
+        ax.set_title(f"Scatter plot entre {col_x} y {col_y}")
+
+        corr_coef, p_value = stats.pearsonr(df_filtrado[col_x], df_filtrado[col_y])
+        st.write(f"Coeficiente de correlación de Pearson: {corr_coef:.3f} (p-valor = {p_value:.3g})")
+
+        st.pyplot(fig)
+
 else:
     st.info("Sube un archivo Excel corregido para comenzar.")
+
 

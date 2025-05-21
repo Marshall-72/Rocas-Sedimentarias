@@ -76,6 +76,10 @@ if uploaded_file:
             data_graf.plot(kind="pie", autopct="%1.1f%%", ax=ax)
             ax.set_ylabel("")
             ax.set_title(f"Gráfico de pastel - {columna}")
+
+        # Leyenda fuente
+        plt.figtext(0.5, -0.1, "Fuente: Cutipa, C. Jaramillo, A. Quenaya, F. Amaro, M.", ha="center", fontsize=9, style="italic")
+
         st.pyplot(fig)
     else:
         col1 = st.selectbox("Selecciona columna 1 para heatmap", columnas, key="col1")
@@ -85,6 +89,9 @@ if uploaded_file:
         fig, ax = plt.subplots(figsize=(10,6))
         sns.heatmap(tabla_cruzada, annot=True, fmt="d", cmap="YlGnBu", ax=ax)
         ax.set_title(f"Heatmap de frecuencias entre {col1} y {col2}")
+
+        plt.figtext(0.5, -0.1, "Fuente: Cutipa, C. Jaramillo, A. Quenaya, F. Amaro, M.", ha="center", fontsize=9, style="italic")
+
         st.pyplot(fig)
 
     st.header("Gráfico innovador: Diagrama Sankey")
@@ -137,7 +144,15 @@ if uploaded_file:
             )
         )])
 
-        fig.update_layout(title_text="Diagrama Sankey de estructuras sedimentarias", font_size=10)
+        fig.update_layout(
+            title_text="Diagrama Sankey de estructuras sedimentarias",
+            font_size=10,
+            annotations=[dict(
+                text="Fuente: Cutipa, C. Jaramillo, A. Quenaya, F. Amaro, M.",
+                x=0.5, y=-0.1, showarrow=False,
+                font=dict(size=10, style="italic")
+            )]
+        )
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.warning("Selecciona al menos dos columnas categóricas para generar el Sankey.")
@@ -158,8 +173,16 @@ if uploaded_file:
         ax.set_title(f"Scatter plot entre {col_x} y {col_y}")
 
         corr_coef, p_value = stats.pearsonr(df_filtrado[col_x], df_filtrado[col_y])
+        st.pyplot(fig)
+
         st.write(f"Coeficiente de correlación de Pearson: {corr_coef:.3f} (p-valor = {p_value:.3g})")
 
-        st.pyplot(fig)
+        descripcion = """
+        El coeficiente de correlación de Pearson mide la relación lineal entre dos variables numéricas.
+        Valores cercanos a 1 o -1 indican una relación fuerte positiva o negativa, respectivamente.
+        Valores cercanos a 0 indican poca o ninguna relación lineal.
+        """
+        st.info(descripcion)
+
 else:
     st.info("Sube un archivo Excel corregido para comenzar.")

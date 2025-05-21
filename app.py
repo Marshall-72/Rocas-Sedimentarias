@@ -67,7 +67,7 @@ if uploaded_file:
         columna = st.selectbox("Selecciona la columna para graficar", columnas)
         data_graf = df_filtrado[columna].value_counts()
 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(8,5))
         if tipo_grafico == "Barra":
             data_graf.plot(kind="bar", ax=ax)
             ax.set_ylabel("Frecuencia")
@@ -78,6 +78,7 @@ if uploaded_file:
             ax.set_ylabel("")
             ax.set_title(f"Gráfico de pastel - {columna}")
 
+        # Fuente abajo del gráfico
         plt.figtext(0.5, -0.1, "Fuente: Cutipa, C. Jaramillo, A. Quenaya, F. Amaro, M.", ha="center", fontsize=9, style="italic")
 
         st.pyplot(fig)
@@ -168,7 +169,7 @@ if uploaded_file:
 
         slope, intercept, r_value, p_value, std_err = linregress(df_filtrado[col_x], df_filtrado[col_y])
 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(8,5))
         ax.scatter(df_filtrado[col_x], df_filtrado[col_y], alpha=0.7, label="Datos")
         ax.plot(df_filtrado[col_x], intercept + slope * df_filtrado[col_x], color="red", label="Regresión lineal")
         ax.set_xlabel(col_x)
@@ -188,4 +189,5 @@ if uploaded_file:
         st.info(descripcion)
 else:
     st.info("Sube un archivo Excel corregido para comenzar.")
+
 

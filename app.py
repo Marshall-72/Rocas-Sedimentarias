@@ -1,142 +1,53 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.linear_model import LinearRegression
-import numpy as np
 
-# Cargar el archivo Excel
-st.title("Análisis Interactivo de Estructuras Sedimentarias")
+st.title("Visualización y filtro de estructuras sedimentarias")
 
-# Subir archivo Excel
-uploaded_file = st.file_uploader("Cargar archivo Excel", type=["xlsx"])
-
+# Paso 1: subir archivo Excel
+uploaded_file = st.file_uploader("Sube tu archivo Excel", type=["xlsx"])
 if uploaded_file:
-    # Leer el archivo Excel con Pandas
+    # Cargar datos
     df = pd.read_excel(uploaded_file)
 
-    # Mostrar las primeras filas del DataFrame
-    st.write("Vista previa de los datos:", df.head())
+    st.write("Datos cargados:")
+    st.dataframe(df)
 
-    # Mostrar los nombres de las columnas
-    st.write("Columnas en el archivo:", df.columns)
+    # Paso 2: filtros para cada columna
+    filtros = {}
+    for col in df.columns:
+        # Si la columna es categórica o texto, usar multiselección
+        if df[col].dtype == object:
+            opciones = df[col].dropna().unique()
+            seleccion = st.multiselect(f"Filtrar por {col}", opciones, default=opciones)
+            filtros[col] = seleccion
+        else:
+            # Si es numérica, usar slider para rango
+            minimo = float(df[col].min())
+            maximo = float(df[col].max())
+            rango = st.slider(f"Rango para {col}", minimo, maximo, (minimo, maximo))
+            filtros[col] = rango
 
-    # 1. Análisis de frecuencia para columnas cualitativas (categorías)
-    st.write("Distribución de 'Minerales principales'")
-    mineral_counts = df['Minerales principales'].value_counts()
-    st.write(mineral_counts)
+    # Aplicar filtros
+    df_filtrado = df.copy()
+    for col, val in filtros.items():
+        if isinstance(val, list):
+            df_filtrado = df_filtrado[df_filtrado[col].isin(val)]
+        else:
+            df_filtrado = df_filtrado[(df_filtrado[col] >= val[0]) & (df_filtrado[col] <= val[1])]
 
-    # Gráfico de barras para "Minerales principales"
-    fig, ax = plt.subplots(figsize=(8, 6))
-    sns.barplot(x=mineral_counts.index, y=mineral_counts.values, ax=ax, palette='Set2')
-    ax.set_title("Distribución de Minerales Principales")
-    ax.set_xlabel("Mineral Principal")
-    ax.set_ylabel("Frecuencia")
-    st.pyplot(fig)  # Pasar el objeto fig aquí
+    st.write("Datos filtrados:")
+    st.dataframe(df_filtrado)
 
-    # 2. Análisis de frecuencia para 'Tipo de estructura'
-    st.write("Distribución de 'Tipo de estructura'")
-    structure_counts = df['Tipo de estructura'].value_counts()
-    st.write(structure_counts)
+    # Paso 3: generar gráfica
+    st.subheader("Gráfica de tamaño de grano (ejemplo)")
 
-    # Gráfico de barras para "Tipo de estructura"
-    fig, ax = plt.subplots(figsize=(8, 6))
-    sns.barplot(x=structure_counts.index, y=structure_counts.values, ax=ax, palette='Set3')
-    ax.set_title("Distribución de Tipo de Estructura")
-    ax.set_xlabel("Tipo de Estructura")
-    ax.set_ylabel("Frecuencia")
-    st.pyplot(fig)  # Pasar el objeto fig aquí
+    if "Tamaño de grano" in df_filtrado.columns:
+        fig, ax = plt.subplots()
+        df_filtrado["Tamaño de grano"].value_counts().plot(kind='bar', ax=ax)
+        ax.set_xlabel("Tamaño de grano")
+        ax.set_ylabel("Frecuencia")
+        st.pyplot(fig)
+    else:
+        st.write("No se encontró la columna 'Tamaño de grano' para graficar.")
 
-    # Codificación de categorías a números
-    # Mapeo para 'Grado de cementación' (por ejemplo, "Mal"=1, "Regular"=2, "Bien"=3)
-    cementacion_mapping = {"Mal": 1, "Regular": 2, "Bien": 3}
-    df['Grado de cementación'] = df['Grado de cementación'].map(cementacion_mapping)
-
-    # Mapeo para 'Tamaño del grano' (por ejemplo, "Arena"=1, "Grava"=2, "Limo"=3)
-    grano_mapping = {"Arena": 1, "Grava": 2, "Limo": 3}
-    df['Tamaño del grano'] = df['Tamaño del grano'].map(grano_mapping)
-
-    # Estadísticas descriptivas
-    st.write("Estadísticas descriptivas:", df.describe())
-
-    # 3. Selección de muestras para comparación
-    st.write("Selecciona las muestras que deseas comparar:")
-    muestras_seleccionadas = st.multiselect('Muestras', df['Nombre Muestra'].unique())
-
-    if muestras_seleccionadas:
-        # Filtrar las muestras seleccionadas
-        df_seleccionado = df[df['Nombre Muestra'].isin(muestras_seleccionadas)]
-
-        # 4. Gráfico de barras para comparar el tamaño del grano de las muestras seleccionadas
-        st.write("Comparación del Tamaño del Grano de las Muestras Seleccionadas")
-        fig, ax = plt.subplots(figsize=(8, 6))  # Crear figura y ejes
-        sns.barplot(x='Nombre Muestra', y='Tamaño del grano', data=df_seleccionado, palette='Set2', ax=ax)
-        ax.set_title("Tamaño del Grano por Muestra")
-        ax.set_xlabel("Muestra")
-        ax.set_ylabel("Tamaño del Grano")
-        st.pyplot(fig)  # Pasar el objeto fig aquí
-
-        # 5. Gráfico de dispersión interactivo: Comparar Porosidad vs. Tamaño del grano
-        st.write("Comparación entre Porosidad y Tamaño del Grano")
-        fig, ax = plt.subplots(figsize=(8, 6))  # Crear figura y ejes
-        sns.scatterplot(x='Porosidad (%)', y='Tamaño del grano', data=df_seleccionado, hue='Nombre Muestra', palette='Set2', ax=ax)
-        ax.set_title("Porosidad vs Tamaño del Grano")
-        ax.set_xlabel("Porosidad (%)")
-        ax.set_ylabel("Tamaño del Grano")
-        st.pyplot(fig)  # Pasar el objeto fig aquí
-
-        # 6. Regresión lineal entre Porosidad y Grado de Cementación
-        st.write("Relación entre Porosidad y Grado de Cementación")
-        X = df_seleccionado[['Porosidad (%)']].values
-        y = df_seleccionado['Grado de cementación'].values  # Ahora es numérico
-
-        # Crear el modelo de regresión lineal
-        model = LinearRegression()
-        model.fit(X, y)
-        y_pred = model.predict(X)
-
-        # Gráfico de dispersión con línea de regresión
-        fig, ax = plt.subplots(figsize=(8, 6))  # Crear figura y ejes
-        ax.scatter(X, y, color='blue')
-        ax.plot(X, y_pred, color='red', linewidth=2)
-        ax.set_title("Relación entre Porosidad y Grado de Cementación")
-        ax.set_xlabel("Porosidad (%)")
-        ax.set_ylabel("Grado de Cementación")
-        st.pyplot(fig)  # Pasar el objeto fig aquí
-
-        # 7. Gráfico Radar para comparar múltiples parámetros entre las muestras seleccionadas
-        st.write("Comparación de múltiples parámetros entre las muestras seleccionadas")
-
-        # Filtrar solo las columnas numéricas
-        df_radar = df_seleccionado[['Porosidad (%)', 'Tamaño del grano', 'Edad geológica (Ma)', 'Grado de cementación']]
-
-        # Eliminar filas con valores nulos (si hay)
-        df_radar = df_radar.dropna()
-
-        # Verificar que las columnas son numéricas
-        df_radar = df_radar.apply(pd.to_numeric, errors='coerce')
-
-        # Asegurarse de que solo se normalicen las columnas numéricas
-        df_radar_normalized = df_radar.apply(lambda x: (x - x.min()) / (x.max() - x.min()))
-
-        # Crear el gráfico Radar
-        categories = df_radar_normalized.columns
-        N = len(categories)
-        angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
-        angles += angles[:1]
-
-        fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))  # Crear figura y ejes para el radar
-
-        for index, row in df_radar_normalized.iterrows():
-            values = row.tolist()
-            values += values[:1]
-            ax.plot(angles, values, label=index)
-            ax.fill(angles, values, alpha=0.25)
-
-        ax.set_yticklabels([])
-        ax.set_xticks(angles[:-1])
-        ax.set_xticklabels(categories)
-        ax.legend(loc='upper right', bbox_to_anchor=(1.1, 1.1))
-
-        ax.set_title('Comparación de Parámetros entre Muestras')
-        st.pyplot(fig)  # Pasar el objeto fig aquí

@@ -7,7 +7,9 @@ import plotly.colors as pc
 from scipy.stats import linregress
 
 st.title("Dashboard completo: Análisis y visualización de estructuras sedimentarias")
-
+# Encabezado con imagen
+st.image("https://esge.unjbg.edu.pe/portal-web/ingenieria-geologica-geotecnia/section/c2909719-d8de-4e37-97d3-42137a7651cf.png", 
+         width=1000)
 def agregar_columnas_numericas(df):
     mapa_tamano = {
         "muy fino": 10,

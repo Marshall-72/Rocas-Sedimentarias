@@ -5,6 +5,7 @@ import seaborn as sns
 import plotly.graph_objects as go
 import plotly.colors as pc
 import scipy.stats as stats
+from scipy.stats import linregress
 
 st.title("Dashboard completo: Análisis y visualización de estructuras sedimentarias")
 
@@ -77,7 +78,6 @@ if uploaded_file:
             ax.set_ylabel("")
             ax.set_title(f"Gráfico de pastel - {columna}")
 
-        # Leyenda fuente
         plt.figtext(0.5, -0.1, "Fuente: Cutipa, C. Jaramillo, A. Quenaya, F. Amaro, M.", ha="center", fontsize=9, style="italic")
 
         st.pyplot(fig)
@@ -166,16 +166,19 @@ if uploaded_file:
         col_x = st.selectbox("Variable X (numérica)", columnas_numericas, key="corr_x")
         col_y = st.selectbox("Variable Y (numérica)", columnas_numericas, index=1 if len(columnas_numericas) > 1 else 0, key="corr_y")
 
+        slope, intercept, r_value, p_value, std_err = linregress(df_filtrado[col_x], df_filtrado[col_y])
+
         fig, ax = plt.subplots()
-        ax.scatter(df_filtrado[col_x], df_filtrado[col_y], alpha=0.7)
+        ax.scatter(df_filtrado[col_x], df_filtrado[col_y], alpha=0.7, label="Datos")
+        ax.plot(df_filtrado[col_x], intercept + slope * df_filtrado[col_x], color="red", label="Regresión lineal")
         ax.set_xlabel(col_x)
         ax.set_ylabel(col_y)
-        ax.set_title(f"Scatter plot entre {col_x} y {col_y}")
+        ax.set_title(f"Scatter plot y regresión lineal entre {col_x} y {col_y}")
+        ax.legend()
 
-        corr_coef, p_value = stats.pearsonr(df_filtrado[col_x], df_filtrado[col_y])
         st.pyplot(fig)
 
-        st.write(f"Coeficiente de correlación de Pearson: {corr_coef:.3f} (p-valor = {p_value:.3g})")
+        st.write(f"Coeficiente de correlación de Pearson: {r_value:.3f} (p-valor = {p_value:.3g})")
 
         descripcion = """
         El coeficiente de correlación de Pearson mide la relación lineal entre dos variables numéricas.
@@ -183,6 +186,6 @@ if uploaded_file:
         Valores cercanos a 0 indican poca o ninguna relación lineal.
         """
         st.info(descripcion)
-
 else:
     st.info("Sube un archivo Excel corregido para comenzar.")
+

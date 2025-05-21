@@ -130,41 +130,53 @@ if uploaded_file:
 
     # Preguntas interpretativas
   # --- Sección de respuestas interpretativas generadas por IA ---
-try:
-    st.markdown("---")
-    st.subheader("🧠 Respuestas generadas por IA - Preguntas interpretativas")
-    st.markdown("**Nota:** Las siguientes respuestas han sido generadas automáticamente mediante inteligencia artificial con fines educativos.")
+st.markdown("---")
+st.subheader("🧠 Respuestas generadas por IA - Preguntas interpretativas")
+st.markdown("**Selecciona una pregunta para ver su interpretación generada automáticamente por IA.**")
 
-    preguntas_respuestas = [
-        ("1. Indique tres tipos de estructuras sedimentarias propias de un determinado ambiente de sedimentación.",
-         "Estratificación cruzada, laminación paralela y ondas de corriente."),
-        ("2. ¿Qué tipo de estructuras sedimentarias son indicativas de ambientes continentales eólicos?",
-         "Estratificación cruzada eólica, superficies de deflación y ripples formados por el viento."),
-        ("3. ¿En qué tipo de ambientes las trazas fósiles pueden ser encontradas como galerías?",
-         "En ambientes marinos costeros y plataformas someras con sedimentos blandos, oxigenados, donde organismos excavan galerías."),
-        ("4. ¿En qué tipo de ambientes se puede dar un tipo de bioturbación intensa?",
-         "En ambientes marinos someros con buena oxigenación y abundante fauna bentónica."),
-        ("5. ¿Puede un ambiente con sedimentación rápida generar buen registro icnofósil?",
-         "No, porque los organismos no tienen tiempo suficiente para excavar o dejar trazas antes del enterramiento."),
-        ("6. ¿Qué indica alternancia de estratos bioturbados y no bioturbados?",
-         "Indica variaciones ambientales: periodos de alta y baja actividad biológica o cambios en la tasa de sedimentación."),
-        ("7. ¿Qué indica una laminación paralela?",
-         "Ambientes de baja energía como lagos o mares profundos, con sedimentación lenta y ordenada."),
-        ("8. ¿Qué estructuras presentan los ríos trenzados?",
-         "Estratificación cruzada de gran escala, barras arenosas y sedimentos gruesos en múltiples canales."),
-        ("9. ¿Qué estructuras presentan los ríos meándricos?",
-         "Laminación paralela y planar en depósitos de llanuras de inundación con sedimentos finos."),
-        ("10. ¿Qué estructuras genera una corriente de turbidez?",
-         "Estratificación gradada, donde los sedimentos se ordenan por tamaño desde grueso (base) a fino (tope).")
-    ]
+preguntas_respuestas_dict = {
+    "1. Indique tres tipos de estructuras sedimentarias propias de un determinado ambiente de sedimentación.":
+        "Tres tipos comunes de estructuras sedimentarias son: \n\n"
+        "- **Estratificación cruzada**, típica de ambientes fluviales o desérticos donde los sedimentos se depositan con ángulos inclinados por el movimiento del agua o viento.\n"
+        "- **Laminación paralela**, frecuente en ambientes tranquilos como lagos o plataformas marinas, donde los sedimentos se acumulan de forma ordenada en capas delgadas.\n"
+        "- **Ondas de corriente (ripples)**, que se forman por el flujo de agua en ambientes someros como playas, ríos o deltas.",
 
-    for pregunta, respuesta in preguntas_respuestas:
-        st.markdown(f"**{pregunta}**")
-        st.markdown(f"> {respuesta}")
-        st.markdown("---")
+    "2. ¿Qué tipo de estructuras sedimentarias son indicativas de ambientes continentales eólicos?":
+        "Los ambientes eólicos continentales generan estructuras como:\n\n"
+        "- **Estratificación cruzada de gran escala**, formada por la migración de dunas de arena movidas por el viento.\n"
+        "- **Superficies de deflación**, áreas donde el viento ha removido los sedimentos finos dejando gravas o pavimentos desérticos.\n"
+        "- **Ripples eólicos**, pequeñas ondulaciones en la superficie del sedimento causadas por el arrastre de partículas finas por el viento.",
 
-except Exception as e:
-    st.error(f"No se pudo mostrar la sección de preguntas interpretativas: {e}")
+    "3. ¿En qué tipo de ambientes las trazas fósiles pueden ser encontradas como galerías? Explique.":
+        "Las trazas fósiles en forma de galerías son comunes en ambientes marinos someros y costeros, como playas, deltas o plataformas continentales. En estos ambientes, organismos como gusanos, moluscos o crustáceos excavan túneles en sedimentos blandos, generando estructuras biogénicas que quedan preservadas al litificarse el sedimento. Estas trazas reflejan condiciones de buena oxigenación y actividad biológica en el pasado geológico.",
+
+    "4. ¿En qué tipo de ambientes se puede dar un tipo de bioturbación intensa?":
+        "La bioturbación intensa se da en ambientes sedimentarios con alta disponibilidad de oxígeno y organismos bentónicos, como plataformas continentales, zonas intermareales y fondos marinos litorales. En estos lugares, los organismos remueven activamente el sedimento, borrando o alterando las estructuras originales y dejando trazas que pueden ser estudiadas como ichnofósiles. Esta actividad biológica suele ser indicativa de estabilidad ambiental y baja tasa de sedimentación.",
+
+    "5. ¿Puede un ambiente con sedimentación rápida generar buen registro icnofósil?":
+        "No. En ambientes con sedimentación rápida, los organismos no disponen del tiempo suficiente para excavar, alimentarse o dejar trazas significativas antes de quedar sepultados. Como resultado, el registro icnofósil es escaso o nulo. Estos entornos suelen estar asociados a procesos de alta energía como flujos de detritos, turbiditas o inundaciones súbitas.",
+
+    "6. ¿Qué indica alternancia de estratos bioturbados y no bioturbados?":
+        "Esta alternancia indica variabilidad ambiental en el tiempo. Los estratos bioturbados reflejan periodos de baja sedimentación, buena oxigenación y presencia de fauna activa. Los estratos no bioturbados sugieren eventos de sedimentación rápida, condiciones anóxicas o ausencia de vida bentónica. Esta secuencia puede interpretarse como producto de ciclos climáticos, estacionales o eventos hidrodinámicos recurrentes.",
+
+    "7. ¿Qué indica una laminación paralela?":
+        "La laminación paralela indica un ambiente de baja energía y sedimentación continua, como lagos profundos, llanuras de inundación o plataformas marinas externas. Las láminas reflejan deposición pausada de partículas finas que no son perturbadas por organismos o corrientes intensas. Su presencia sugiere estabilidad ambiental y transporte suspendido de sedimentos por largos periodos.",
+
+    "8. ¿Qué estructuras presentan los ríos trenzados?":
+        "Los ríos trenzados presentan estratificación cruzada de gran escala, barras de arena y gravas, canales múltiples y bancos migratorios. Estas estructuras reflejan alta energía, carga sedimentaria abundante y cambios frecuentes en la dirección del flujo. La sedimentación se da de forma rápida y caótica, y los depósitos resultantes son mal clasificados y lateralmente discontinuos.",
+
+    "9. ¿Qué estructuras presentan los ríos meándricos?":
+        "Los ríos meándricos muestran laminación paralela, estratificación planar y ocasionalmente estructuras de corte y relleno en sus canales. Sus depósitos están bien organizados y estratificados, con gradación normal. Reflejan ambientes de baja energía y flujo constante, como planicies de inundación o meandros abandonados donde predominan sedimentos finos como limos y arcillas.",
+
+    "10. ¿Qué estructuras genera una corriente de turbidez?":
+        "Las corrientes de turbidez generan **estratificación gradada**. Este tipo de depósito, típico de ambientes marinos profundos como taludes continentales, se caracteriza por la disposición de partículas desde gruesas en la base hasta finas en el tope, producto de la decantación progresiva del flujo cargado de sedimentos. Esta secuencia es conocida como una turbidita o secuencia de Bouma."
+}
+
+pregunta_seleccionada = st.selectbox("Selecciona una pregunta:", list(preguntas_respuestas_dict.keys()))
+
+if pregunta_seleccionada:
+    st.markdown(f"**Respuesta:**")
+    st.info(preguntas_respuestas_dict[pregunta_seleccionada])
 
 else:
     st.info("Sube un archivo Excel corregido para comenzar.")

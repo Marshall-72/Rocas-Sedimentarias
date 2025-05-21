@@ -129,46 +129,43 @@ if uploaded_file:
         st.info("El coeficiente de Pearson mide la relación lineal entre dos variables numéricas. Cerca de 1 o -1 indica relación fuerte; cerca de 0, débil.")
 
     # Preguntas interpretativas
+  # --- Sección de respuestas interpretativas generadas por IA ---
+try:
     st.markdown("---")
     st.subheader("🧠 Respuestas generadas por IA - Preguntas interpretativas")
-    st.markdown("**Nota:** Las siguientes respuestas han sido generadas automáticamente por IA con fines educativos.")
+    st.markdown("**Nota:** Las siguientes respuestas han sido generadas automáticamente mediante inteligencia artificial con fines educativos.")
 
     preguntas_respuestas = [
         ("1. Indique tres tipos de estructuras sedimentarias propias de un determinado ambiente de sedimentación.",
          "Estratificación cruzada, laminación paralela y ondas de corriente."),
-
         ("2. ¿Qué tipo de estructuras sedimentarias son indicativas de ambientes continentales eólicos?",
-         "Estratificación cruzada eólica, superficies de deflación, y ripples por viento."),
-
+         "Estratificación cruzada eólica, superficies de deflación y ripples formados por el viento."),
         ("3. ¿En qué tipo de ambientes las trazas fósiles pueden ser encontradas como galerías?",
-         "En ambientes marinos costeros con sedimentos blandos y oxigenados."),
-
+         "En ambientes marinos costeros y plataformas someras con sedimentos blandos, oxigenados, donde organismos excavan galerías."),
         ("4. ¿En qué tipo de ambientes se puede dar un tipo de bioturbación intensa?",
-         "En plataformas someras bien oxigenadas, con abundante vida bentónica."),
-
+         "En ambientes marinos someros con buena oxigenación y abundante fauna bentónica."),
         ("5. ¿Puede un ambiente con sedimentación rápida generar buen registro icnofósil?",
-         "No, porque no hay tiempo para que los organismos formen trazas antes de enterrarse."),
-
+         "No, porque los organismos no tienen tiempo suficiente para excavar o dejar trazas antes del enterramiento."),
         ("6. ¿Qué indica alternancia de estratos bioturbados y no bioturbados?",
-         "Cambios en condiciones ambientales o de sedimentación."),
-
+         "Indica variaciones ambientales: periodos de alta y baja actividad biológica o cambios en la tasa de sedimentación."),
         ("7. ¿Qué indica una laminación paralela?",
-         "Ambiente tranquilo como lago o mar profundo con sedimentación lenta."),
-
+         "Ambientes de baja energía como lagos o mares profundos, con sedimentación lenta y ordenada."),
         ("8. ¿Qué estructuras presentan los ríos trenzados?",
-         "Estratificación cruzada de gran escala, barras arenosas y gravas."),
-
-        ("9. ¿Y los ríos meándricos?",
-         "Laminación paralela y planar en sedimentos finos de llanura de inundación."),
-
-        ("10. ¿Qué estructura genera una corriente de turbidez?",
-         "Estratificación gradada, típica de flujos submarinos densos.")
+         "Estratificación cruzada de gran escala, barras arenosas y sedimentos gruesos en múltiples canales."),
+        ("9. ¿Qué estructuras presentan los ríos meándricos?",
+         "Laminación paralela y planar en depósitos de llanuras de inundación con sedimentos finos."),
+        ("10. ¿Qué estructuras genera una corriente de turbidez?",
+         "Estratificación gradada, donde los sedimentos se ordenan por tamaño desde grueso (base) a fino (tope).")
     ]
 
     for pregunta, respuesta in preguntas_respuestas:
         st.markdown(f"**{pregunta}**")
         st.markdown(f"> {respuesta}")
         st.markdown("---")
+
+except Exception as e:
+    st.error(f"No se pudo mostrar la sección de preguntas interpretativas: {e}")
+
 else:
     st.info("Sube un archivo Excel corregido para comenzar.")
 

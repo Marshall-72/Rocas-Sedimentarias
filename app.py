@@ -2,27 +2,29 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.graph_objects as go
 
-st.title("Visualización y filtro de estructuras sedimentarias")
+st.title("Dashboard completo: Análisis y visualización de estructuras sedimentarias")
 
-# Paso 1: subir archivo Excel
+# --- Carga de archivo ---
 uploaded_file = st.file_uploader("Sube tu archivo Excel corregido", type=["xlsx"])
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
     st.write("Datos cargados:")
     st.dataframe(df)
 
-    # Paso 2: filtros para cada columna
+    # --- Filtros ---
+    st.sidebar.header("Filtros")
     filtros = {}
     for col in df.columns:
         if df[col].dtype == object:
             opciones = df[col].dropna().unique()
-            seleccion = st.multiselect(f"Filtrar por {col}", opciones, default=opciones)
+            seleccion = st.sidebar.multiselect(f"Filtrar por {col}", opciones, default=opciones)
             filtros[col] = seleccion
         else:
             minimo = float(df[col].min())
             maximo = float(df[col].max())
-            rango = st.slider(f"Rango para {col}", minimo, maximo, (minimo, maximo))
+            rango = st.sidebar.slider(f"Rango para {col}", minimo, maximo, (minimo, maximo))
             filtros[col] = rango
 
     # Aplicar filtros
@@ -33,16 +35,14 @@ if uploaded_file:
         else:
             df_filtrado = df_filtrado[(df_filtrado[col] >= val[0]) & (df_filtrado[col] <= val[1])]
 
-    st.write("Datos filtrados:")
+    st.write(f"Datos filtrados: {len(df_filtrado)} registros")
     st.dataframe(df_filtrado)
 
-    # Sección de gráficos
-    st.header("Gráficos")
+    # --- Sección de gráficos básicos ---
+    st.header("Gráficos básicos")
 
     columnas = list(df_filtrado.columns)
-
-    # Selección tipo gráfico
-    tipo_grafico = st.selectbox("Selecciona tipo de gráfico", ["Barra", "Pastel", "Heatmap (2 columnas)"])
+    tipo_grafico = st.selectbox("Selecciona tipo de gráfico básico", ["Barra", "Pastel", "Heatmap (2 columnas)"])
 
     if tipo_grafico in ["Barra", "Pastel"]:
         columna = st.selectbox("Selecciona la columna para graficar", columnas)
@@ -62,10 +62,9 @@ if uploaded_file:
         st.pyplot(fig)
 
     else:  # Heatmap
-        col1 = st.selectbox("Selecciona columna 1", columnas, key="col1")
-        col2 = st.selectbox("Selecciona columna 2", columnas, key="col2")
+        col1 = st.selectbox("Selecciona columna 1 para heatmap", columnas, key="col1")
+        col2 = st.selectbox("Selecciona columna 2 para heatmap", columnas, key="col2")
 
-        # Crear tabla cruzada
         tabla_cruzada = pd.crosstab(df_filtrado[col1], df_filtrado[col2])
 
         fig, ax = plt.subplots(figsize=(10,6))
@@ -73,4 +72,53 @@ if uploaded_file:
         ax.set_title(f"Heatmap de frecuencias entre {col1} y {col2}")
 
         st.pyplot(fig)
+
+    # --- Sección gráfico innovador: Sankey ---
+    st.header("Gráfico innovador: Diagrama Sankey")
+
+    columnas_categoricas = [col for col in df_filtrado.columns if df_filtrado[col].dtype == object]
+    st.write("Selecciona columnas categóricas (2 o 3) para Sankey")
+    cols_sankey = st.multiselect("Columnas para Sankey", columnas_categoricas, default=columnas_categoricas[:3])
+
+    if len(cols_sankey) >= 2:
+        labels = []
+        for col in cols_sankey:
+            labels.extend(df_filtrado[col].unique())
+        labels = list(pd.Series(labels).unique())
+
+        label_to_idx = {label: i for i, label in enumerate(labels)}
+
+        source = []
+        target = []
+        value = []
+
+        for i in range(len(cols_sankey) - 1):
+            df_grouped = df_filtrado.groupby([cols_sankey[i], cols_sankey[i + 1]]).size().reset_index(name='count')
+            for _, row in df_grouped.iterrows():
+                source.append(label_to_idx[row[cols_sankey[i]]])
+                target.append(label_to_idx[row[cols_sankey[i + 1]]])
+                value.append(row['count'])
+
+        fig = go.Figure(data=[go.Sankey(
+            node=dict(
+                pad=15,
+                thickness=20,
+                line=dict(color="black", width=0.5),
+                label=labels,
+                color="skyblue"
+            ),
+            link=dict(
+                source=source,
+                target=target,
+                value=value
+            )
+        )])
+
+        fig.update_layout(title_text="Diagrama Sankey de estructuras sedimentarias", font_size=10)
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.warning("Selecciona al menos dos columnas categóricas para generar el Sankey.")
+
+else:
+    st.info("Sube un archivo Excel corregido para comenzar.")
 

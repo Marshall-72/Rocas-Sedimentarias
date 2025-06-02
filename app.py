@@ -178,26 +178,6 @@ if uploaded_file:
 
 st.title("Dashboard sedimentario con cuestionario visual y Sankey dinámico")
 
-def agregar_columnas_numericas(df):
-    mapa_tamano = {
-        "muy fino": 10,
-        "fino": 50,
-        "medio": 200,
-        "grueso": 600,
-        "muy grueso": 1000
-    }
-    df['granulometria_um'] = df['tamaño_de_grano'].map(mapa_tamano).fillna(0)
-
-    mapa_estrat = {
-        "Estratificación plana": 1,
-        "Estratificación cruzada": 2,
-        "Estratificación interna": 3
-    }
-    df['complejidad_estratificacion'] = df['tipo_de_estratificacion'].map(mapa_estrat).fillna(0)
-
-    return df
-
-uploaded_file = st.file_uploader("Sube tu archivo Excel corregido", type=["xlsx"])
 
 if uploaded_file:
     df = pd.read_excel(uploaded_file)

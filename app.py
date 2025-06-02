@@ -174,6 +174,33 @@ if uploaded_file:
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.warning("Selecciona al menos dos columnas categóricas para generar el Sankey.")
+    
+
+    # Supongamos que df ya está cargado y contiene las muestras y características
+
+    st.header("🧩 Cuestionario interactivo para identificar muestra sedimentaria")
+
+    # Paso 1: seleccionar tipo de estructura (con imágenes o botones)
+    tipo_estruc = st.radio("Selecciona el tipo de estructura sedimentaria", df['estructura_sedimentaria'].unique())
+
+    # Paso 2: seleccionar tipo de estratificación
+    estratificacion = st.selectbox("Selecciona el tipo de estratificación", df['tipo_de_estratificacion'].unique())
+
+    # Paso 3: seleccionar tamaño de grano (puedes hacer botón o slider si está numérico)
+    tam_grano = st.selectbox("Selecciona el tamaño de grano", df['tamaño_de_grano'].unique())
+
+    # Filtrar muestras según selección
+    filtro = (df['estructura_sedimentaria'] == tipo_estruc) & (df['tipo_de_estratificacion'] == estratificacion) & (df['tamaño_de_grano'] == tam_grano)
+    muestras_filtradas = df[filtro]
+
+    if len(muestras_filtradas) == 0:
+        st.warning("No se encontró muestra con esas características. Intenta otra combinación.")
+    elif len(muestras_filtradas) == 1:
+        st.success(f"Muestra identificada: {muestras_filtradas.iloc[0]['muestra']}")
+        # Aquí puedes mostrar gráficos o imágenes asociadas
+    else:
+        st.info(f"Se encontraron {len(muestras_filtradas)} muestras con esas características:")
+        st.dataframe(muestras_filtradas[['muestra', 'estructura_sedimentaria', 'tipo_de_estratificacion', 'tamaño_de_grano']])
 
     # Análisis de correlación con regresión
     st.header("Análisis de correlación y regresión")

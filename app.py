@@ -344,8 +344,6 @@ if uploaded_file:
 
         st.plotly_chart(fig, use_container_width=True)
 
-else:
-    st.info("Sube un archivo Excel corregido para comenzar.")
 
     # Análisis de correlación con regresión
     st.header("Análisis de correlación y regresión")

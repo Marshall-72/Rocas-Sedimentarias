@@ -176,7 +176,7 @@ if uploaded_file:
         st.warning("Selecciona al menos dos columnas categóricas para generar el Sankey.")
     
 
-  st.title("Dashboard sedimentario con cuestionario visual y Sankey dinámico")
+st.title("Dashboard sedimentario con cuestionario visual y Sankey dinámico")
 
 def agregar_columnas_numericas(df):
     mapa_tamano = {
@@ -343,6 +343,9 @@ if uploaded_file:
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+else:
+    st.info("Sube un archivo Excel corregido para comenzar.")
 
     # Análisis de correlación con regresión
     st.header("Análisis de correlación y regresión")

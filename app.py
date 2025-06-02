@@ -176,31 +176,173 @@ if uploaded_file:
         st.warning("Selecciona al menos dos columnas categóricas para generar el Sankey.")
     
 
-    # Supongamos que df ya está cargado y contiene las muestras y características
+  st.title("Dashboard sedimentario con cuestionario visual y Sankey dinámico")
 
-    st.header("🧩 Cuestionario interactivo para identificar muestra sedimentaria")
+def agregar_columnas_numericas(df):
+    mapa_tamano = {
+        "muy fino": 10,
+        "fino": 50,
+        "medio": 200,
+        "grueso": 600,
+        "muy grueso": 1000
+    }
+    df['granulometria_um'] = df['tamaño_de_grano'].map(mapa_tamano).fillna(0)
 
-    # Paso 1: seleccionar tipo de estructura (con imágenes o botones)
-    tipo_estruc = st.radio("Selecciona el tipo de estructura sedimentaria", df['estructura_sedimentaria'].unique())
+    mapa_estrat = {
+        "Estratificación plana": 1,
+        "Estratificación cruzada": 2,
+        "Estratificación interna": 3
+    }
+    df['complejidad_estratificacion'] = df['tipo_de_estratificacion'].map(mapa_estrat).fillna(0)
 
-    # Paso 2: seleccionar tipo de estratificación
-    estratificacion = st.selectbox("Selecciona el tipo de estratificación", df['tipo_de_estratificacion'].unique())
+    return df
 
-    # Paso 3: seleccionar tamaño de grano (puedes hacer botón o slider si está numérico)
-    tam_grano = st.selectbox("Selecciona el tamaño de grano", df['tamaño_de_grano'].unique())
+uploaded_file = st.file_uploader("Sube tu archivo Excel corregido", type=["xlsx"])
 
-    # Filtrar muestras según selección
-    filtro = (df['estructura_sedimentaria'] == tipo_estruc) & (df['tipo_de_estratificacion'] == estratificacion) & (df['tamaño_de_grano'] == tam_grano)
-    muestras_filtradas = df[filtro]
+if uploaded_file:
+    df = pd.read_excel(uploaded_file)
+    df = agregar_columnas_numericas(df)
 
-    if len(muestras_filtradas) == 0:
-        st.warning("No se encontró muestra con esas características. Intenta otra combinación.")
-    elif len(muestras_filtradas) == 1:
-        st.success(f"Muestra identificada: {muestras_filtradas.iloc[0]['muestra']}")
-        # Aquí puedes mostrar gráficos o imágenes asociadas
-    else:
-        st.info(f"Se encontraron {len(muestras_filtradas)} muestras con esas características:")
-        st.dataframe(muestras_filtradas[['muestra', 'estructura_sedimentaria', 'tipo_de_estratificacion', 'tamaño_de_grano']])
+    if "paso" not in st.session_state:
+        st.session_state.paso = 1
+        st.session_state.tipo_estruc = None
+        st.session_state.tipo_estrat = None
+        st.session_state.tam_grano = None
+
+    # Paso 1 - Tipo de estructura sedimentaria
+    if st.session_state.paso == 1:
+        st.header("Paso 1: Selecciona tipo de estructura sedimentaria")
+        opciones_estructura = df['estructura_sedimentaria'].dropna().unique()
+        columnas = st.columns(min(len(opciones_estructura), 4))
+        for i, opcion in enumerate(opciones_estructura):
+            col = columnas[i % 4]
+            if col.button(opcion):
+                st.session_state.tipo_estruc = opcion
+                st.session_state.paso = 2
+                st.experimental_rerun()
+
+    # Paso 2 - Tipo de estratificación
+    elif st.session_state.paso == 2:
+        st.header("Paso 2: Selecciona tipo de estratificación")
+        opciones_estrat = df['tipo_de_estratificacion'].dropna().unique()
+        columnas = st.columns(min(len(opciones_estrat), 4))
+        for i, opcion in enumerate(opciones_estrat):
+            col = columnas[i % 4]
+            if col.button(opcion):
+                st.session_state.tipo_estrat = opcion
+                st.session_state.paso = 3
+                st.experimental_rerun()
+
+    # Paso 3 - Tamaño de grano
+    elif st.session_state.paso == 3:
+        st.header("Paso 3: Selecciona tamaño de grano")
+        opciones_tamano = df['tamaño_de_grano'].dropna().unique()
+        columnas = st.columns(min(len(opciones_tamano), 4))
+        for i, opcion in enumerate(opciones_tamano):
+            col = columnas[i % 4]
+            if col.button(opcion):
+                st.session_state.tam_grano = opcion
+                st.session_state.paso = 4
+                st.experimental_rerun()
+
+    # Paso 4 - Resultados y Sankey
+    elif st.session_state.paso == 4:
+        st.header("Resultados y gráfico Sankey")
+
+        filtro = (
+            (df['estructura_sedimentaria'] == st.session_state.tipo_estruc) &
+            (df['tipo_de_estratificacion'] == st.session_state.tipo_estrat) &
+            (df['tamaño_de_grano'] == st.session_state.tam_grano)
+        )
+        df_filtrado = df[filtro]
+
+        st.markdown(f"### {len(df_filtrado)} muestra(s) encontrada(s)")
+
+        if len(df_filtrado) == 0:
+            st.warning("No se encontraron muestras con esas características.")
+        else:
+            st.dataframe(df_filtrado[['muestra', 'estructura_sedimentaria', 'tipo_de_estratificacion', 'tamaño_de_grano']])
+
+        cols_sankey = ['estructura_sedimentaria', 'tipo_de_estratificacion', 'tamaño_de_grano', 'muestra']
+        df_sankey = df_filtrado if len(df_filtrado) > 0 else df
+
+        labels = []
+        for col in cols_sankey:
+            labels.extend(df_sankey[col].unique())
+        labels = list(pd.Series(labels).unique())
+        label_to_idx = {label: i for i, label in enumerate(labels)}
+
+        source = []
+        target = []
+        value = []
+        label_links = []
+
+        for i in range(len(cols_sankey) - 1):
+            df_grouped = df_sankey.groupby([cols_sankey[i], cols_sankey[i + 1]]).size().reset_index(name='count')
+            for _, row in df_grouped.iterrows():
+                source.append(label_to_idx[row[cols_sankey[i]]])
+                target.append(label_to_idx[row[cols_sankey[i + 1]]])
+                value.append(row['count'])
+                label_links.append(f"{row[cols_sankey[i]]} → {row[cols_sankey[i + 1]]}: {row['count']} muestras")
+
+        colores_disponibles = pc.qualitative.Plotly
+        colores_links = []
+        for i in range(len(source)):
+            color_base = colores_disponibles[i % len(colores_disponibles)]
+            r = int(color_base[1:3], 16)
+            g = int(color_base[3:5], 16)
+            b = int(color_base[5:7], 16)
+            colores_links.append(f'rgba({r},{g},{b},0.6)')
+
+        num_cols = len(cols_sankey)
+        x_spacing = 1.0 / (num_cols - 1)
+        node_x = []
+        node_y = []
+
+        for label in labels:
+            nivel = next((i for i, col in enumerate(cols_sankey) if label in df_sankey[col].values), 0)
+            node_x.append(nivel * x_spacing)
+
+        nivel_nodes = defaultdict(list)
+        for i, x in enumerate(node_x):
+            nivel_nodes[x].append(i)
+        node_y = [0] * len(labels)
+        for nivel, nodes in nivel_nodes.items():
+            n = len(nodes)
+            for idx, node in enumerate(sorted(nodes)):
+                node_y[node] = 1 - idx / (n - 1) if n > 1 else 0.5
+
+        fig = go.Figure(data=[go.Sankey(
+            node=dict(
+                pad=15,
+                thickness=20,
+                line=dict(color="black", width=0.5),
+                label=labels,
+                color="skyblue",
+                x=node_x,
+                y=node_y
+            ),
+            link=dict(
+                source=source,
+                target=target,
+                value=value,
+                color=colores_links,
+                label=label_links,
+                hovertemplate='%{label}<extra></extra>'
+            )
+        )])
+
+        fig.update_layout(
+            title_text="Diagrama Sankey Dinámico: Características y muestras sedimentarias",
+            font_size=10,
+            annotations=[dict(
+                text="Fuente: Cutipa, C. Jaramillo, A. Quenaya, F. Amaro, M.",
+                x=0.5, y=-0.1, showarrow=False,
+                font=dict(size=10, style="italic")
+            )]
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
 
     # Análisis de correlación con regresión
     st.header("Análisis de correlación y regresión")

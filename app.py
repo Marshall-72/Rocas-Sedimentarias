@@ -102,26 +102,31 @@ if uploaded_file:
         if tipo_grafico in ["Barra", "Pastel"]:
             columnas = list(df_filtrado.columns)
             columna = st.selectbox("Columna para graficar", columnas, key="grafico_basico_col")
-            data_graf = df_filtrado[columna].value_counts()
-
-            fig, ax = plt.subplots(figsize=(8, 5))
-            if tipo_grafico == "Barra":
-                data_graf.plot(kind="bar", ax=ax)
+            if columna:
+                data_graf = df_filtrado[columna].value_counts()
+                fig, ax = plt.subplots(figsize=(8, 5))
+                if tipo_grafico == "Barra":
+                    data_graf.plot(kind="bar", ax=ax)
+                else:
+                    data_graf.plot(kind="pie", autopct="%1.1f%%", ax=ax)
+                ax.set_title(f"{tipo_grafico} de {columna}")
+                plt.figtext(0.5, -0.1, "Fuente: Cutipa, C. Jaramillo, A. Quenaya, F. Amaro, M.", ha="center", fontsize=9, style="italic")
+                st.pyplot(fig)
             else:
-                data_graf.plot(kind="pie", autopct="%1.1f%%", ax=ax)
-            ax.set_title(f"{tipo_grafico} de {columna}")
-            plt.figtext(0.5, -0.1, "Fuente: Cutipa, C. Jaramillo, A. Quenaya, F. Amaro, M.", ha="center", fontsize=9, style="italic")
-            st.pyplot(fig)
+                st.warning("Selecciona una columna para graficar.")
 
         elif tipo_grafico == "Heatmap (2 columnas)":
             col1 = st.selectbox("Columna 1", df_filtrado.columns, key="heatmap_col1")
             col2 = st.selectbox("Columna 2", df_filtrado.columns, key="heatmap_col2")
-            tabla = pd.crosstab(df_filtrado[col1], df_filtrado[col2])
-            fig, ax = plt.subplots(figsize=(10, 6))
-            sns.heatmap(tabla, annot=True, fmt="d", cmap="YlGnBu", ax=ax)
-            ax.set_title(f"Heatmap entre {col1} y {col2}")
-            plt.figtext(0.5, -0.1, "Fuente: Cutipa, C. Jaramillo, A. Quenaya, F. Amaro, M.", ha="center", fontsize=9, style="italic")
-            st.pyplot(fig)
+            if col1 and col2 and col1 != col2:
+                tabla = pd.crosstab(df_filtrado[col1], df_filtrado[col2])
+                fig, ax = plt.subplots(figsize=(10, 6))
+                sns.heatmap(tabla, annot=True, fmt="d", cmap="YlGnBu", ax=ax)
+                ax.set_title(f"Heatmap entre {col1} y {col2}")
+                plt.figtext(0.5, -0.1, "Fuente: Cutipa, C. Jaramillo, A. Quenaya, F. Amaro, M.", ha="center", fontsize=9, style="italic")
+                st.pyplot(fig)
+            else:
+                st.warning("Selecciona dos columnas diferentes para el heatmap.")
 
         # --- Sankey dinámico ---
         st.subheader("Diagrama Sankey dinámico")
@@ -213,17 +218,20 @@ if uploaded_file:
         if len(columnas_num) >= 2:
             col_x = st.selectbox("Variable X", columnas_num, key="corr_x")
             col_y = st.selectbox("Variable Y", columnas_num, key="corr_y")
-            slope, intercept, r_value, p_value, std_err = linregress(df_filtrado[col_x], df_filtrado[col_y])
-            fig, ax = plt.subplots(figsize=(8, 5))
-            ax.scatter(df_filtrado[col_x], df_filtrado[col_y], alpha=0.7, label="Datos")
-            ax.plot(df_filtrado[col_x], intercept + slope * df_filtrado[col_x], color="red", label="Regresión lineal")
-            ax.legend()
-            ax.set_title(f"Relación entre {col_x} y {col_y}")
-            st.pyplot(fig)
-            st.markdown(f"**Coeficiente de correlación de Pearson:** {r_value:.3f} (p-valor: {p_value:.3g})")
-            st.info("El coeficiente de Pearson mide la relación lineal entre dos variables numéricas. Cerca de 1 o -1 indica relación fuerte; cerca de 0, débil.")
+            if col_x != col_y:
+                slope, intercept, r_value, p_value, std_err = linregress(df_filtrado[col_x], df_filtrado[col_y])
+                fig, ax = plt.subplots(figsize=(8, 5))
+                ax.scatter(df_filtrado[col_x], df_filtrado[col_y], alpha=0.7, label="Datos")
+                ax.plot(df_filtrado[col_x], intercept + slope * df_filtrado[col_x], color="red", label="Regresión lineal")
+                ax.legend()
+                ax.set_title(f"Relación entre {col_x} y {col_y}")
+                st.pyplot(fig)
+                st.markdown(f"**Coeficiente de correlación de Pearson:** {r_value:.3f} (p-valor: {p_value:.3g})")
+                st.info("El coeficiente de Pearson mide la relación lineal entre dos variables numéricas. Cerca de 1 o -1 indica relación fuerte; cerca de 0, débil.")
+            else:
+                st.warning("Selecciona dos variables diferentes para el análisis de correlación.")
 
-    # --- Preguntas interpretativas interactivas ---
+    # --- Preguntas interpretativas ---
     st.header("Preguntas interpretativas - respuestas generadas por IA")
     preguntas_respuestas_dict = {
         "1. Indique tres tipos de estructuras sedimentarias propias de un determinado ambiente de sedimentación.":
@@ -254,3 +262,4 @@ if uploaded_file:
 
 else:
     st.info("Sube un archivo Excel corregido para comenzar.")
+

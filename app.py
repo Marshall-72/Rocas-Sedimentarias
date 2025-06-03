@@ -8,8 +8,7 @@ from scipy.stats import linregress
 from collections import defaultdict
 
 # Encabezado con imagen
-st.image("https://esge.unjbg.edu.pe/portal-web/ingenieria-geologica-geotecnia/section/c2909719-d8de-4e37-97d3-42137a7651cf.png", 
-         width=1000)
+st.image("https://esge.unjbg.edu.pe/portal-web/ingenieria-geologica-geotecnia/section/c2909719-d8de-4e37-97d3-42137a7651cf.png", width=1000)
 st.title("Dashboard completo: Análisis y visualización de estructuras sedimentarias")
 
 def agregar_columnas_numericas(df):
@@ -39,9 +38,112 @@ if uploaded_file:
     st.write("Datos cargados:")
     st.dataframe(df)
 
-    # ------------------- SECCIÓN ENCUESTA POR BOTONES -------------------
+    # -----------------------------------------
+    # FILTROS LATERALES
+    # -----------------------------------------
+    st.sidebar.header("Filtros")
+    filtros = {}
+    for col in df.columns:
+        if df[col].dtype == object:
+            opciones = df[col].dropna().unique()
+            seleccion = st.sidebar.multiselect(f"Filtrar por {col}", opciones, default=opciones)
+            filtros[col] = seleccion
+        else:
+            minimo = float(df[col].min())
+            maximo = float(df[col].max())
+            rango = st.sidebar.slider(f"Rango para {col}", minimo, maximo, (minimo, maximo))
+            filtros[col] = rango
 
-    st.header("Encuesta rápida para filtrar muestras sedimentarias")
+    df_filtrado = df.copy()
+    for col, val in filtros.items():
+        if isinstance(val, list):
+            df_filtrado = df_filtrado[df_filtrado[col].isin(val)]
+        else:
+            df_filtrado = df_filtrado[(df_filtrado[col] >= val[0]) & (df_filtrado[col] <= val[1])]
+
+    st.write(f"Datos filtrados: {len(df_filtrado)} registros")
+    st.dataframe(df_filtrado)
+
+    # -----------------------------------------
+    # GRAFICOS BASICOS
+    # -----------------------------------------
+    st.header("Gráficos básicos")
+    columnas = list(df_filtrado.columns)
+    tipo_grafico = st.selectbox("Selecciona tipo de gráfico", ["Barra", "Pastel", "Heatmap (2 columnas)"])
+
+    if tipo_grafico in ["Barra", "Pastel"]:
+        columna = st.selectbox("Columna para graficar", columnas)
+        data_graf = df_filtrado[columna].value_counts()
+
+        fig, ax = plt.subplots(figsize=(8, 5))
+        if tipo_grafico == "Barra":
+            data_graf.plot(kind="bar", ax=ax)
+        else:
+            data_graf.plot(kind="pie", autopct="%1.1f%%", ax=ax)
+        ax.set_title(f"{tipo_grafico} de {columna}")
+        plt.figtext(0.5, -0.1, "Fuente: Cutipa, C. Jaramillo, A. Quenaya, F. Amaro, M.", ha="center", fontsize=9, style="italic")
+        st.pyplot(fig)
+
+    elif tipo_grafico == "Heatmap (2 columnas)":
+        col1 = st.selectbox("Columna 1", columnas, key="col1")
+        col2 = st.selectbox("Columna 2", columnas, key="col2")
+        tabla = pd.crosstab(df_filtrado[col1], df_filtrado[col2])
+        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.heatmap(tabla, annot=True, fmt="d", cmap="YlGnBu", ax=ax)
+        ax.set_title(f"Heatmap entre {col1} y {col2}")
+        plt.figtext(0.5, -0.1, "Fuente: Cutipa, C. Jaramillo, A. Quenaya, F. Amaro, M.", ha="center", fontsize=9, style="italic")
+        st.pyplot(fig)
+
+    # -----------------------------------------
+    # GRAFICO SANKEY
+    # -----------------------------------------
+    st.header("Gráfico innovador: Diagrama Sankey")
+    columnas_cat = [col for col in df_filtrado.columns if df_filtrado[col].dtype == object]
+    cols_sankey = st.multiselect("Selecciona columnas categóricas (2 o 3)", columnas_cat, default=columnas_cat[:3])
+
+    if len(cols_sankey) >= 2:
+        labels = list(pd.unique(df_filtrado[cols_sankey].values.ravel('K')))
+        label_idx = {k: v for v, k in enumerate(labels)}
+        source, target, value = [], [], []
+        for i in range(len(cols_sankey) - 1):
+            df_grouped = df_filtrado.groupby([cols_sankey[i], cols_sankey[i+1]]).size().reset_index(name='count')
+            for _, row in df_grouped.iterrows():
+                source.append(label_idx[row[cols_sankey[i]]])
+                target.append(label_idx[row[cols_sankey[i+1]]])
+                value.append(row['count'])
+        colores = pc.qualitative.Plotly
+        link_colors = [f'rgba{tuple(int(colores[i % len(colores)][j:j+2], 16) for j in (1,3,5)) + (0.6,)}' for i in range(len(source))]
+        fig = go.Figure(data=[go.Sankey(
+            node=dict(label=labels, pad=15, thickness=20, color="skyblue"),
+            link=dict(source=source, target=target, value=value, color=link_colors)
+        )])
+        fig.update_layout(title_text="Diagrama Sankey", font_size=10,
+                          annotations=[dict(text="Fuente: Cutipa, C. Jaramillo, A. Quenaya, F. Amaro, M.", x=0.5, y=-0.1, showarrow=False)])
+        st.plotly_chart(fig, use_container_width=True)
+
+    # -----------------------------------------
+    # ANALISIS DE CORRELACION Y REGRESION
+    # -----------------------------------------
+    st.header("Análisis de correlación y regresión")
+    columnas_num = df_filtrado.select_dtypes(include='number').columns.tolist()
+    if len(columnas_num) >= 2:
+        col_x = st.selectbox("Variable X", columnas_num)
+        col_y = st.selectbox("Variable Y", columnas_num, index=1)
+        slope, intercept, r_value, p_value, std_err = linregress(df_filtrado[col_x], df_filtrado[col_y])
+        fig, ax = plt.subplots(figsize=(8, 5))
+        ax.scatter(df_filtrado[col_x], df_filtrado[col_y], alpha=0.7, label="Datos")
+        ax.plot(df_filtrado[col_x], intercept + slope * df_filtrado[col_x], color="red", label="Regresión lineal")
+        ax.legend()
+        ax.set_title(f"Relación entre {col_x} y {col_y}")
+        st.pyplot(fig)
+        st.markdown(f"**Coeficiente de correlación de Pearson:** {r_value:.3f} (p-valor: {p_value:.3g})")
+        st.info("El coeficiente de Pearson mide la relación lineal entre dos variables numéricas. Cerca de 1 o -1 indica relación fuerte; cerca de 0, débil.")
+
+    # -----------------------------------------
+    # ENCUESTA OPCIONAL AL FINAL
+    # -----------------------------------------
+    st.markdown("---")
+    st.header("Encuesta rápida opcional para filtrar y ver Sankey")
 
     if "encuesta_paso" not in st.session_state:
         st.session_state.encuesta_paso = 1
@@ -79,11 +181,11 @@ if uploaded_file:
             if cols[i % 4].button(opcion, key=f"enc_tam_{i}"):
                 st.session_state.enc_tam_grano = opcion
         if st.session_state.enc_tam_grano:
-            if st.button("Mostrar resultados Sankey"):
+            if st.button("Mostrar Sankey filtrado"):
                 st.session_state.encuesta_paso = 4
 
     if st.session_state.encuesta_paso == 4:
-        st.subheader("Resultados de la encuesta - Diagrama Sankey filtrado")
+        st.subheader("Diagrama Sankey filtrado según encuesta")
 
         filtro_encuesta = (
             (df['estructura_sedimentaria'] == st.session_state.enc_tipo_estruc) &
@@ -95,7 +197,7 @@ if uploaded_file:
         st.markdown(f"Muestras que coinciden: {len(df_enc_filtrado)}")
 
         if len(df_enc_filtrado) == 0:
-            st.warning("No se encontraron muestras con esas características en la encuesta. Mostrando Sankey general.")
+            st.warning("No se encontraron muestras con esas características. Se muestra Sankey general.")
             df_enc_filtrado = df
 
         cols_sankey_enc = ['estructura_sedimentaria', 'tipo_de_estratificacion', 'tamaño_de_grano', 'muestra']
@@ -125,104 +227,9 @@ if uploaded_file:
 
         st.plotly_chart(fig_enc, use_container_width=True)
 
-    # ------------------- FIN ENCUESTA -------------------
-
-    # --------- Aquí continúa tu código original con filtros laterales, gráficos, sankey y demás ---------
-
-    # Filtros laterales
-    st.sidebar.header("Filtros")
-    filtros = {}
-    for col in df.columns:
-        if df[col].dtype == object:
-            opciones = df[col].dropna().unique()
-            seleccion = st.sidebar.multiselect(f"Filtrar por {col}", opciones, default=opciones)
-            filtros[col] = seleccion
-        else:
-            minimo = float(df[col].min())
-            maximo = float(df[col].max())
-            rango = st.sidebar.slider(f"Rango para {col}", minimo, maximo, (minimo, maximo))
-            filtros[col] = rango
-
-    df_filtrado = df.copy()
-    for col, val in filtros.items():
-        if isinstance(val, list):
-            df_filtrado = df_filtrado[df_filtrado[col].isin(val)]
-        else:
-            df_filtrado = df_filtrado[(df_filtrado[col] >= val[0]) & (df_filtrado[col] <= val[1])]
-
-    st.write(f"Datos filtrados: {len(df_filtrado)} registros")
-    st.dataframe(df_filtrado)
-
-    # Gráficos básicos
-    st.header("Gráficos básicos")
-    columnas = list(df_filtrado.columns)
-    tipo_grafico = st.selectbox("Selecciona tipo de gráfico", ["Barra", "Pastel", "Heatmap (2 columnas)"])
-
-    if tipo_grafico in ["Barra", "Pastel"]:
-        columna = st.selectbox("Columna para graficar", columnas)
-        data_graf = df_filtrado[columna].value_counts()
-
-        fig, ax = plt.subplots(figsize=(8, 5))
-        if tipo_grafico == "Barra":
-            data_graf.plot(kind="bar", ax=ax)
-        else:
-            data_graf.plot(kind="pie", autopct="%1.1f%%", ax=ax)
-        ax.set_title(f"{tipo_grafico} de {columna}")
-        plt.figtext(0.5, -0.1, "Fuente: Cutipa, C. Jaramillo, A. Quenaya, F. Amaro, M.", ha="center", fontsize=9, style="italic")
-        st.pyplot(fig)
-
-    elif tipo_grafico == "Heatmap (2 columnas)":
-        col1 = st.selectbox("Columna 1", columnas, key="col1")
-        col2 = st.selectbox("Columna 2", columnas, key="col2")
-        tabla = pd.crosstab(df_filtrado[col1], df_filtrado[col2])
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sns.heatmap(tabla, annot=True, fmt="d", cmap="YlGnBu", ax=ax)
-        ax.set_title(f"Heatmap entre {col1} y {col2}")
-        plt.figtext(0.5, -0.1, "Fuente: Cutipa, C. Jaramillo, A. Quenaya, F. Amaro, M.", ha="center", fontsize=9, style="italic")
-        st.pyplot(fig)
-
-    # Gráfico Sankey
-    st.header("Gráfico innovador: Diagrama Sankey")
-    columnas_cat = [col for col in df_filtrado.columns if df_filtrado[col].dtype == object]
-    cols_sankey = st.multiselect("Selecciona columnas categóricas (2 o 3)", columnas_cat, default=columnas_cat[:3])
-
-    if len(cols_sankey) >= 2:
-        labels = list(pd.unique(df_filtrado[cols_sankey].values.ravel('K')))
-        label_idx = {k: v for v, k in enumerate(labels)}
-        source, target, value = [], [], []
-        for i in range(len(cols_sankey) - 1):
-            df_grouped = df_filtrado.groupby([cols_sankey[i], cols_sankey[i+1]]).size().reset_index(name='count')
-            for _, row in df_grouped.iterrows():
-                source.append(label_idx[row[cols_sankey[i]]])
-                target.append(label_idx[row[cols_sankey[i+1]]])
-                value.append(row['count'])
-        colores = pc.qualitative.Plotly
-        link_colors = [f'rgba{tuple(int(colores[i % len(colores)][j:j+2], 16) for j in (1,3,5)) + (0.6,)}' for i in range(len(source))]
-        fig = go.Figure(data=[go.Sankey(
-            node=dict(label=labels, pad=15, thickness=20, color="skyblue"),
-            link=dict(source=source, target=target, value=value, color=link_colors)
-        )])
-        fig.update_layout(title_text="Diagrama Sankey", font_size=10,
-                          annotations=[dict(text="Fuente: Cutipa, C. Jaramillo, A. Quenaya, F. Amaro, M.", x=0.5, y=-0.1, showarrow=False)])
-        st.plotly_chart(fig, use_container_width=True)
-
-    # Correlación con regresión
-    st.header("Análisis de correlación y regresión")
-    columnas_num = df_filtrado.select_dtypes(include='number').columns.tolist()
-    if len(columnas_num) >= 2:
-        col_x = st.selectbox("Variable X", columnas_num)
-        col_y = st.selectbox("Variable Y", columnas_num, index=1)
-        slope, intercept, r_value, p_value, std_err = linregress(df_filtrado[col_x], df_filtrado[col_y])
-        fig, ax = plt.subplots(figsize=(8, 5))
-        ax.scatter(df_filtrado[col_x], df_filtrado[col_y], alpha=0.7, label="Datos")
-        ax.plot(df_filtrado[col_x], intercept + slope * df_filtrado[col_x], color="red", label="Regresión lineal")
-        ax.legend()
-        ax.set_title(f"Relación entre {col_x} y {col_y}")
-        st.pyplot(fig)
-        st.markdown(f"**Coeficiente de correlación de Pearson:** {r_value:.3f} (p-valor: {p_value:.3g})")
-        st.info("El coeficiente de Pearson mide la relación lineal entre dos variables numéricas. Cerca de 1 o -1 indica relación fuerte; cerca de 0, débil.")
-
-    # Preguntas interpretativas (independientes)
+    # -----------------------------------------
+    # PREGUNTAS INTERPRETATIVAS (independientes)
+    # -----------------------------------------
     st.markdown("---")
     st.subheader("🧠 Respuestas generadas por IA - Preguntas interpretativas")
     st.markdown("**Selecciona una pregunta para ver su interpretación generada automáticamente por IA.**")

@@ -97,30 +97,92 @@ if uploaded_file:
     # -----------------------------------------
     # GRAFICO SANKEY
     # -----------------------------------------
-    st.header("Gráfico innovador: Diagrama Sankey")
-    columnas_cat = [col for col in df_filtrado.columns if df_filtrado[col].dtype == object]
-    cols_sankey = st.multiselect("Selecciona columnas categóricas (2 o 3)", columnas_cat, default=columnas_cat[:3])
+ st.header("Gráfico innovador: Diagrama Sankey mejorado")
 
-    if len(cols_sankey) >= 2:
-        labels = list(pd.unique(df_filtrado[cols_sankey].values.ravel('K')))
-        label_idx = {k: v for v, k in enumerate(labels)}
-        source, target, value = [], [], []
-        for i in range(len(cols_sankey) - 1):
-            df_grouped = df_filtrado.groupby([cols_sankey[i], cols_sankey[i+1]]).size().reset_index(name='count')
-            for _, row in df_grouped.iterrows():
-                source.append(label_idx[row[cols_sankey[i]]])
-                target.append(label_idx[row[cols_sankey[i+1]]])
-                value.append(row['count'])
-        colores = pc.qualitative.Plotly
-        link_colors = [f'rgba{tuple(int(colores[i % len(colores)][j:j+2], 16) for j in (1,3,5)) + (0.6,)}' for i in range(len(source))]
-        fig = go.Figure(data=[go.Sankey(
-            node=dict(label=labels, pad=15, thickness=20, color="skyblue"),
-            link=dict(source=source, target=target, value=value, color=link_colors)
-        )])
-        fig.update_layout(title_text="Diagrama Sankey", font_size=10,
-                          annotations=[dict(text="Fuente: Cutipa, C. Jaramillo, A. Quenaya, F. Amaro, M.", x=0.5, y=-0.1, showarrow=False)])
-        st.plotly_chart(fig, use_container_width=True)
+columnas_cat = [col for col in df_filtrado.columns if df_filtrado[col].dtype == object]
+cols_sankey = st.multiselect("Selecciona columnas categóricas (2 o 3)", columnas_cat, default=columnas_cat[:3])
 
+if len(cols_sankey) >= 2:
+    labels = list(pd.unique(df_filtrado[cols_sankey].values.ravel('K')))
+    label_idx = {k: v for v, k in enumerate(labels)}
+
+    source, target, value = [], [], []
+
+    # Agrupar para enlaces
+    for i in range(len(cols_sankey) - 1):
+        df_grouped = df_filtrado.groupby([cols_sankey[i], cols_sankey[i+1]]).size().reset_index(name='count')
+        for _, row in df_grouped.iterrows():
+            source.append(label_idx[row[cols_sankey[i]]])
+            target.append(label_idx[row[cols_sankey[i+1]]])
+            value.append(row['count'])
+
+    # Distribuir nodos por nivel y posición vertical equidistante
+    n_niveles = len(cols_sankey)
+    x_spacing = 1 / (n_niveles - 1)
+
+    # Crear lista de nodos por nivel
+    nivel_nodos = {nivel: [] for nivel in range(n_niveles)}
+    for i, label in enumerate(labels):
+        for nivel_i, col in enumerate(cols_sankey):
+            if label in df_filtrado[col].values:
+                nivel_nodos[nivel_i].append(i)
+                break
+
+    node_x = []
+    node_y = []
+
+    for nivel in range(n_niveles):
+        n = len(nivel_nodos[nivel])
+        xs = [nivel * x_spacing] * n
+        if n == 1:
+            ys = [0.5]
+        else:
+            ys = list(np.linspace(0, 1, n))
+        node_x.extend(xs)
+        node_y.extend(ys)
+
+    # Colorear enlaces por nodo origen (source)
+    colores_base = pc.qualitative.Plotly
+    link_colors = []
+    for s in source:
+        c = colores_base[s % len(colores_base)]
+        r = int(c[1:3], 16)
+        g = int(c[3:5], 16)
+        b = int(c[5:7], 16)
+        link_colors.append(f'rgba({r},{g},{b},0.6)')
+
+    fig = go.Figure(data=[go.Sankey(
+        node=dict(
+            label=labels,
+            pad=15,
+            thickness=20,
+            line=dict(color="black", width=0.5),
+            color="skyblue",
+            x=node_x,
+            y=node_y
+        ),
+        link=dict(
+            source=source,
+            target=target,
+            value=value,
+            color=link_colors
+        )
+    )])
+
+    fig.update_layout(
+        title_text="Diagrama Sankey con distribución optimizada",
+        font_size=10,
+        annotations=[dict(
+            text="Fuente: Cutipa, C. Jaramillo, A. Quenaya, F. Amaro, M.",
+            x=0.5,
+            y=-0.1,
+            showarrow=False
+        )]
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+else:
+    st.warning("Selecciona al menos dos columnas categóricas para mostrar el diagrama Sankey.")
     # -----------------------------------------
     # ANALISIS DE CORRELACION Y REGRESION
     # -----------------------------------------

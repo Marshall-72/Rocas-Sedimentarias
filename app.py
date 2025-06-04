@@ -97,8 +97,7 @@ if uploaded_file:
     # -----------------------------------------
     # GRAFICO SANKEY
     # -----------------------------------------
- st.header("Gráfico innovador: Diagrama Sankey mejorado")
-
+st.header("Gráfico innovador: Diagrama Sankey mejorado")
 columnas_cat = [col for col in df_filtrado.columns if df_filtrado[col].dtype == object]
 cols_sankey = st.multiselect("Selecciona columnas categóricas (2 o 3)", columnas_cat, default=columnas_cat[:3])
 
